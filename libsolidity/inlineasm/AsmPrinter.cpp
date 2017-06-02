@@ -37,11 +37,24 @@ using namespace dev::solidity;
 using namespace dev::solidity::assembly;
 
 //@TODO source locations
+namespace {
+
+string appendLocation(SourceLocation const& _location)
+{
+	if (_location.isEmpty())
+		return "";
+	return
+		"/// @location " + *_location.sourceName +
+		":" + boost::lexical_cast<string>(_location.start) +
+		"," + boost::lexical_cast<string>(_location.end) + "\n";
+}
+
+}
 
 string AsmPrinter::operator()(assembly::Instruction const& _instruction)
 {
 	solAssert(!m_julia, "");
-	return boost::to_lower_copy(instructionInfo(_instruction.instruction).name);
+	return appendLocation(_instruction.location) + boost::to_lower_copy(instructionInfo(_instruction.instruction).name);
 }
 
 string AsmPrinter::operator()(assembly::Literal const& _literal)
@@ -94,6 +107,7 @@ string AsmPrinter::operator()(assembly::FunctionalInstruction const& _functional
 {
 	solAssert(!m_julia, "");
 	return
+		appendLocation(_functionalInstruction.location) +
 		(*this)(_functionalInstruction.instruction) +
 		"(" +
 		boost::algorithm::join(
@@ -105,23 +119,23 @@ string AsmPrinter::operator()(assembly::FunctionalInstruction const& _functional
 string AsmPrinter::operator()(assembly::Label const& _label)
 {
 	solAssert(!m_julia, "");
-	return _label.name + ":";
+	return appendLocation(_label.location) + _label.name + ":";
 }
 
 string AsmPrinter::operator()(assembly::StackAssignment const& _assignment)
 {
 	solAssert(!m_julia, "");
-	return "=: " + (*this)(_assignment.variableName);
+	return appendLocation(_assignment.location) + "=: " + (*this)(_assignment.variableName);
 }
 
 string AsmPrinter::operator()(assembly::Assignment const& _assignment)
 {
-	return (*this)(_assignment.variableName) + " := " + boost::apply_visitor(*this, *_assignment.value);
+	return appendLocation(_assignment.location) + (*this)(_assignment.variableName) + " := " + boost::apply_visitor(*this, *_assignment.value);
 }
 
 string AsmPrinter::operator()(assembly::VariableDeclaration const& _variableDeclaration)
 {
-	string out = "let ";
+	string out = appendLocation(_variableDeclaration.location) + "let ";
 	out += boost::algorithm::join(
 		_variableDeclaration.variables | boost::adaptors::transformed(
 			[this](TypedName variable) { return variable.name + appendTypeName(variable.type); }
@@ -135,7 +149,7 @@ string AsmPrinter::operator()(assembly::VariableDeclaration const& _variableDecl
 
 string AsmPrinter::operator()(assembly::FunctionDefinition const& _functionDefinition)
 {
-	string out = "function " + _functionDefinition.name + "(";
+	string out = appendLocation(_functionDefinition.location) + "function " + _functionDefinition.name + "(";
 	out += boost::algorithm::join(
 		_functionDefinition.arguments | boost::adaptors::transformed(
 			[this](TypedName argument) { return argument.name + appendTypeName(argument.type); }
@@ -160,6 +174,7 @@ string AsmPrinter::operator()(assembly::FunctionDefinition const& _functionDefin
 string AsmPrinter::operator()(assembly::FunctionCall const& _functionCall)
 {
 	return
+		appendLocation(_functionCall.location) +
 		(*this)(_functionCall.functionName) + "(" +
 		boost::algorithm::join(
 			_functionCall.arguments | boost::adaptors::transformed(boost::apply_visitor(*this)),
@@ -169,7 +184,7 @@ string AsmPrinter::operator()(assembly::FunctionCall const& _functionCall)
 
 string AsmPrinter::operator()(Switch const& _switch)
 {
-	string out = "switch " + boost::apply_visitor(*this, *_switch.expression);
+	string out = appendLocation(_switch.location) + "switch " + boost::apply_visitor(*this, *_switch.expression);
 	for (auto const& _case: _switch.cases)
 	{
 		if (!_case.value)
@@ -184,13 +199,13 @@ string AsmPrinter::operator()(Switch const& _switch)
 string AsmPrinter::operator()(Block const& _block)
 {
 	if (_block.statements.empty())
-		return "{\n}";
+		return appendLocation(_block.location) + "{\n}";
 	string body = boost::algorithm::join(
 		_block.statements | boost::adaptors::transformed(boost::apply_visitor(*this)),
 		"\n"
 	);
 	boost::replace_all(body, "\n", "\n    ");
-	return "{\n    " + body + "\n}";
+	return appendLocation(_block.location) + "{\n    " + body + "\n}";
 }
 
 string AsmPrinter::appendTypeName(std::string const& _type)
