@@ -331,7 +331,7 @@ bool CompilerStack::prepareFormalAnalysis(ErrorReporter* _errorReporter)
 	return true;
 }
 
-AssemblyStack const CompilerStack::assemblyStack() const
+AssemblyStack const CompilerStack::assemblyStack(string const& _contractName) const
 {
 	/// TODO: return an assembly for each contract
 	IRGenerate ir;
@@ -339,7 +339,7 @@ AssemblyStack const CompilerStack::assemblyStack() const
 		ir.process(*source->ast);
 	AssemblyStack stack;
 	/// TODO: set scanner
-	stack.analyze(ir.body());
+	stack.analyze(ir.contract(_contractName));
 	return stack;
 }
 
