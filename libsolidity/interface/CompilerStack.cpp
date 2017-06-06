@@ -42,6 +42,7 @@
 #include <libsolidity/interface/GasEstimator.h>
 #include <libsolidity/formal/Why3Translator.h>
 #include <libsolidity/ast/ASTJsonImporter.h>
+#include <libsolidity/ast/ASTJsonConverter.h>
 
 #include <libevmasm/Exceptions.h>
 
@@ -175,6 +176,12 @@ bool CompilerStack::analyze()
 	for (Source const* source: m_sourceOrder)
 		if (!syntaxChecker.checkSyntax(*source->ast))
 			noErrors = false;
+		else
+		{
+			ASTJsonConverter converter(false, sourceIndices());
+			cout << "Json before registerDecs" << std::endl;
+			cout << dev::jsonCompactPrint(converter.toJson(*source->ast)) << std::endl;
+		}
 
 	DocStringAnalyser docStringAnalyser(m_errors);
 	for (Source const* source: m_sourceOrder)
@@ -186,6 +193,8 @@ bool CompilerStack::analyze()
 	for (Source const* source: m_sourceOrder)
 		if (!resolver.registerDeclarations(*source->ast))
 			return false;
+
+
 
 	map<string, SourceUnit const*> sourceUnitsByName;
 	for (auto& source: m_sources)
@@ -204,6 +213,9 @@ bool CompilerStack::analyze()
 				if (!resolver.resolveNamesAndTypes(*contract))
 				{
 					cout << "hier" << std::endl;
+//					ASTJsonConverter converter(false, sourceIndices());
+//					cout << "Json before registerDecs" << std::endl;
+//					cout << dev::jsonCompactPrint(converter.toJson(*source->ast)) << std::endl;
 					return false;
 				}
 
