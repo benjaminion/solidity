@@ -59,7 +59,7 @@ bool AssemblyStack::parseAndAnalyze(std::string const& _sourceName, std::string 
 	return m_analysisSuccessful;
 }
 
-eth::LinkerObject AssemblyStack::assemble(Machine _machine)
+eth::LinkerObject AssemblyStack::assemble(Machine _machine) const
 {
 	solAssert(m_analysisSuccessful, "");
 	solAssert(m_parserResult, "");
@@ -69,13 +69,13 @@ eth::LinkerObject AssemblyStack::assemble(Machine _machine)
 	{
 	case Machine::EVM:
 	{
-		auto assembly = assembly::CodeGenerator(m_errorReporter).assemble(*m_parserResult, *m_analysisInfo);
+		auto assembly = assembly::CodeGenerator::assemble(*m_parserResult, *m_analysisInfo);
 		return assembly.assemble();
 	}
 	case Machine::EVM15:
 	{
 		julia::EVMAssembly assembly(true);
-		julia::CodeTransform(m_errorReporter, assembly, *m_analysisInfo, true).run(*m_parserResult);
+		julia::CodeTransform(assembly, *m_analysisInfo, true).run(*m_parserResult);
 		return assembly.finalize();
 	}
 	case Machine::eWasm:
@@ -85,7 +85,7 @@ eth::LinkerObject AssemblyStack::assemble(Machine _machine)
 	return eth::LinkerObject();
 }
 
-string AssemblyStack::print()
+string AssemblyStack::print() const
 {
 	solAssert(m_parserResult, "");
 	return assembly::AsmPrinter(m_language == Language::JULIA)(*m_parserResult);
