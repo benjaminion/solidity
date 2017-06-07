@@ -705,13 +705,12 @@ bool ASTJsonConverter::visit(ElementaryTypeNameExpression const& _node)
 
 bool ASTJsonConverter::visit(Literal const& _node)
 {
-	string tokenString = tokenKind(_node.token());
 	Json::Value value{_node.value()};
 	if (!dev::validateUTF8(_node.value()))
 		value = Json::nullValue;
 	Token::Value subdenomination = Token::Value(_node.subDenomination());
 	std::vector<pair<string, Json::Value>> attributes = {
-		make_pair("kind", tokenString),
+		make_pair("kind", tokenKind(_node.token())),
 		make_pair("value", value),
 		make_pair(m_legacy ? "hexvalue" : "hexValue", toHex(_node.value())),
 		make_pair(
