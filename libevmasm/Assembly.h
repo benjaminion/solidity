@@ -79,12 +79,6 @@ public:
 	AssemblyItem const& back() const { return m_items.back(); }
 	std::string backString() const { return m_items.size() && m_items.back().type() == PushString ? m_strings.at((h256)m_items.back().data()) : std::string(); }
 
-	void onePath() { if (asserts(!m_totalDeposit && !m_baseDeposit)) BOOST_THROW_EXCEPTION(InvalidDeposit()); m_baseDeposit = m_deposit; m_totalDeposit = INT_MAX; }
-	void otherPath() { donePath(); m_totalDeposit = m_deposit; m_deposit = m_baseDeposit; }
-	void donePaths() { donePath(); m_totalDeposit = m_baseDeposit = 0; }
-	void ignored() { m_baseDeposit = m_deposit; }
-	void endIgnored() { m_deposit = m_baseDeposit; m_baseDeposit = 0; }
-
 	void popTo(int _deposit) { while (m_deposit > _deposit) append(solidity::Instruction::POP); }
 
 	void injectStart(AssemblyItem const& _i);
@@ -118,7 +112,6 @@ protected:
 	/// returns the replaced tags.
 	std::map<u256, u256> optimiseInternal(bool _enable, bool _isCreation, size_t _runs);
 
-	void donePath() { if (m_totalDeposit != INT_MAX && m_totalDeposit != m_deposit) BOOST_THROW_EXCEPTION(InvalidDeposit()); }
 	unsigned bytesRequired(unsigned subTagSize) const;
 
 private:
@@ -141,8 +134,6 @@ protected:
 	mutable std::vector<size_t> m_tagPositionsInBytecode;
 
 	int m_deposit = 0;
-	int m_baseDeposit = 0;
-	int m_totalDeposit = 0;
 
 	SourceLocation m_currentSourceLocation;
 };
